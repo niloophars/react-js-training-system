@@ -79,6 +79,12 @@ export default function AuthPage() {
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="admin">
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-2" />
+                          Admin
+                        </div>
+                      </SelectItem>
                       <SelectItem value="faculty">
                         <div className="flex items-center">
                           <Users className="h-4 w-4 mr-2" />
@@ -148,6 +154,12 @@ export default function AuthPage() {
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="admin">
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-2" />
+                          Admin
+                        </div>
+                      </SelectItem>
                       <SelectItem value="faculty">
                         <div className="flex items-center">
                           <Users className="h-4 w-4 mr-2" />

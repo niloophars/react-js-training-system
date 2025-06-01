@@ -16,8 +16,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Users, TrendingUp, Clock, Award, BookOpen, Play } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 
 export default function AnalyticsPage() {
+  const searchParams = useSearchParams()
+  const userRole = searchParams.get("role") || "faculty"
+
+  if (userRole !== "faculty" && userRole !== "admin") {
+    window.location.href = "/dashboard"
+    return null
+  }
+
   const overallStats = [
     {
       title: "Total Trainees",
@@ -111,7 +120,7 @@ export default function AnalyticsPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard?role=faculty">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>

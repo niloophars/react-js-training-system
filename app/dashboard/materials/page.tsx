@@ -212,6 +212,12 @@ export default function TrainingMaterialsPage() {
           (material) => assignedMaterials[material.id]?.includes("trainee1"), // Assuming current user is trainee1
         )
 
+  // Redirect trainees to their own materials page
+  if (userRole === "trainee") {
+    window.location.href = "/dashboard/my-trainings"
+    return null
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar userRole={userRole} />
@@ -223,7 +229,7 @@ export default function TrainingMaterialsPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard?role=faculty">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
