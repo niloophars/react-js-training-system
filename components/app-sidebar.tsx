@@ -26,7 +26,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   const facultyItems = [
     {
       title: "Dashboard",
-      url: "/dashboard",
+      url: "/dashboard?role=faculty",
       icon: Home,
     },
     {
@@ -49,7 +49,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   const traineeItems = [
     {
       title: "Dashboard",
-      url: "/dashboard",
+      url: "/dashboard?role=trainee",
       icon: Home,
     },
     {
@@ -64,7 +64,36 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     },
   ]
 
-  const menuItems = userRole === "faculty" ? facultyItems : traineeItems
+  const adminItems = [
+    {
+      title: "Dashboard",
+      url: "/dashboard?role=admin",
+      icon: Home,
+    },
+    {
+      title: "Training Management",
+      url: "/dashboard/training-management",
+      icon: BookOpen,
+    },
+    {
+      title: "Trainee Management",
+      url: "/dashboard/trainee-management",
+      icon: Users,
+    },
+    {
+      title: "Faculty Management",
+      url: "/dashboard/faculty-management",
+      icon: Users,
+    },
+    {
+      title: "System Analytics",
+      url: "/dashboard/system-analytics",
+      icon: BarChart3,
+    },
+  ]
+
+  // Update the menuItems logic
+  const menuItems = userRole === "admin" ? adminItems : userRole === "faculty" ? facultyItems : traineeItems
 
   const handleLogout = () => {
     router.push("/")
@@ -100,7 +129,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
           </div>
           <div>
             <h2 className="text-lg font-semibold">TrainMaster</h2>
-            <p className="text-xs text-blue-100 capitalize">{userRole} Portal</p>
+            <p className="text-xs text-blue-100 capitalize">{userRole === "admin" ? "Admin" : userRole} Portal</p>
           </div>
         </motion.div>
       </SidebarHeader>
