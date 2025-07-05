@@ -110,7 +110,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     },
   }
 
-  const item = {
+  const itemVariant = {
     hidden: { opacity: 0, x: -20 },
     show: { opacity: 1, x: 0 },
   }
@@ -140,7 +140,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
             <motion.div variants={container} initial="hidden" animate="show">
               <SidebarMenu>
                 {menuItems.map((item, index) => (
-                  <motion.div key={item.title} variants={item}>
+                  <motion.div key={item.title} variants={itemVariant}>
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         asChild
