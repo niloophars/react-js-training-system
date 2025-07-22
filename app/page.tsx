@@ -18,82 +18,106 @@ export default function AuthPage() {
   const router = useRouter()
 
   const [isSignUp, setIsSignUp] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+
+  // Sign In State
+  const [signInEmail, setSignInEmail] = useState("")
+  const [signInPassword, setSignInPassword] = useState("")
+
+  // Sign Up State
   const [name, setName] = useState("")
+  const [signUpEmail, setSignUpEmail] = useState("")
+  const [signUpPassword, setSignUpPassword] = useState("")
   const [userRole, setUserRole] = useState("")
 
   const toggleToSignUp = () => {
-  setIsSignUp(true)
-  setEmail("")
-  setPassword("")
- }
+    setIsSignUp(true)
+    setSignInEmail("")
+    setSignInPassword("")
+  }
 
   const toggleToSignIn = () => {
-  setIsSignUp(false)
-  setEmail("")
-  setPassword("")
- }
+    setIsSignUp(false)
+    setSignUpEmail("")
+    setSignUpPassword("")
+    setName("")
+    setUserRole("")
+  }
 
-  //Sign-up handler
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/
+  e.preventDefault()
 
-  if (!passwordRegex.test(password)) {
-    alert("Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.")
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/
+  if (!passwordRegex.test(signUpPassword)) {
+    alert("Password must include uppercase, lowercase, number, and special character.")
     return
   }
-    if (userRole === "admin") {
-      alert("Admins cannot sign up. Contact system administrator.")
-      return
-    }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${location.origin}/dashboard`, // redirect post-confirm
-      },
-    })
-
-    if (error) {
-      alert("Signup failed: " + error.message)
-      return
-    }
-
-    if (!data.user) {
-      alert("Signup initiated. Please check your email for confirmation.")
-      return
-    }
-
-    // ➕ Insert into custom User table
-    const { error: insertError } = await supabase.from('"User"').insert({
-      name,
-      email,
-      role: userRole,
-      status: "pending", // or "approved" if auto
-      auth_user_uid: data.user.id,
-      username: email.split("@")[0], // Simple username
-    })
-
-    if (insertError) {
-      alert("User signed up but failed to save in DB: " + insertError.message)
-      return
-    }
-
-    alert("Signup successful. Please verify your email before logging in.")
-    setIsSignUp(false)
+  if (userRole === "admin") {
+    alert("Admins cannot sign up. Contact system administrator.")
+    return
   }
 
-  // 🔑 Sign-in handler
+ const res = await fetch("/api/check-email", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ email: signUpEmail }),
+})
+
+
+ const data = await res.json()
+
+if (data.exists_in_user) {
+  if (data.status === "pending") {
+    alert("This email is already registered and pending admin approval. Please wait for approval.")
+  } else {
+    alert("This email is already in use. Please log in instead.")
+  }
+  return
+}
+
+if (data.exists_in_auth && !data.exists_in_user) {
+  alert("This email has already been used for signup but the user profile is missing or incomplete. Contact support.")
+  return
+}
+
+
+  // ✅ Step 2: Sign up the user in Supabase Auth
+  const { data: signUpData, error } = await supabase.auth.signUp({
+    email: signUpEmail,
+    password: signUpPassword,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/email-verified`,
+      data: {
+        name,
+        role: userRole,
+      },
+    },
+  })
+
+  if (error) {
+    alert("Signup failed: " + error.message)
+    return
+  }
+
+  alert("Signup successful. Please check your email to verify before logging in.")
+  setSignUpEmail("")
+  setSignUpPassword("")
+  setName("")
+  setUserRole("")
+  setIsSignUp(false)
+}
+
+
+
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: signInEmail,
+      password: signInPassword,
     })
 
     if (error) {
@@ -104,57 +128,59 @@ export default function AuthPage() {
     const supabaseUserId = data.user?.id
 
     const { data: userData, error: fetchError } = await supabase
-      .from("User")
-      .select("role, status")
-      .eq("auth_user_id", supabaseUserId)
-      .single()
+  .from("user")
+  .select("role, status")
+  .eq("auth_user_id", supabaseUserId)
+  .maybeSingle()
 
-    if (fetchError || !userData) {
-      alert("User not found in the database.")
-      return
-    }
+if (fetchError) {
+  alert("Error fetching user: " + fetchError.message)
+  return
+}
 
-    if (userData.status === "pending") {
-      alert("Your account is pending approval.")
-      return
-    }
+if (!userData) {
+  alert("Your account is registered but not yet approved. Please wait for admin approval.")
+  return
+}
+
+if (userData.status === "pending") {
+  alert("Your account is pending admin approval. You will be notified once approved.")
+  return
+}
 
     router.push(`/dashboard?role=${userData.role}`)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-100 flex items-center justify-center p-4">
-      {/* Logo */}
       <div className="absolute top-8 left-8">
         <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
           <GraduationCap className="h-8 w-8 text-white" />
         </div>
       </div>
 
-      {/* Form Container */}
       <div className="relative w-full max-w-2xl h-96 bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="relative w-full h-full flex">
-          {/* Login Panel */}
+          {/* Sign In Panel */}
           <div className={`absolute top-0 left-0 w-1/2 h-full p-8 transition-transform duration-700 z-20 ${isSignUp ? "-translate-x-full" : "translate-x-0"}`}>
             <div className="w-full max-w-xs mx-auto">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Sign in</h2>
               <form onSubmit={handleLogin} className="space-y-4">
-                <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              
+                <Input type="email" placeholder="Email" value={signInEmail} onChange={(e) => setSignInEmail(e.target.value)} required />
+                <Input type="password" placeholder="Password" value={signInPassword} onChange={(e) => setSignInPassword(e.target.value)} required />
                 <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-3 rounded-full shadow-lg">SIGN IN</Button>
               </form>
             </div>
           </div>
 
-          {/* Signup Panel */}
+          {/* Sign Up Panel */}
           <div className={`absolute top-0 right-0 w-1/2 h-full p-8 transition-transform duration-700 z-20 ${isSignUp ? "translate-x-0" : "translate-x-full"}`}>
             <div className="w-full max-w-xs mx-auto">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Create Account</h2>
               <form onSubmit={handleSignup} className="space-y-4">
                 <Input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-                <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Input type="email" placeholder="Email" value={signUpEmail} onChange={(e) => setSignUpEmail(e.target.value)} required />
+                <Input type="password" placeholder="Password" value={signUpPassword} onChange={(e) => setSignUpPassword(e.target.value)} required />
                 <Select value={userRole} onValueChange={setUserRole} required>
                   <SelectTrigger className="bg-gray-200 rounded-lg h-12">
                     <SelectValue placeholder="Select your role" />

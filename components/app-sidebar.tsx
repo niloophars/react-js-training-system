@@ -71,19 +71,14 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
       icon: Home,
     },
     {
+    title: "User Management",
+    url: "/dashboard/users", // This is the missing page
+    icon: Users,
+  },
+    {
       title: "Training Management",
       url: "/dashboard/training-management",
       icon: BookOpen,
-    },
-    {
-      title: "Trainee Management",
-      url: "/dashboard/trainee-management",
-      icon: Users,
-    },
-    {
-      title: "Faculty Management",
-      url: "/dashboard/faculty-management",
-      icon: Users,
     },
     {
       title: "System Analytics",

@@ -1,6 +1,8 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { supabase } from "@/lib/supabaseClient"
 import { Suspense } from "react"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -20,6 +22,23 @@ import { motion } from "framer-motion"
 function DashboardPage() {
   const searchParams = useSearchParams()
   const role = searchParams.get("role") || "trainee"
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.replace("/") // Redirect to login page
+      } else {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [router])
+
+  if (loading) return <div>Loading dashboard...</div>
 
   return (
     <SidebarProvider>
