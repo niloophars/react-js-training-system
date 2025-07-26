@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, Plus, Edit, Trash2, Search, UserCheck, UserX, TrendingUp, Award } from "lucide-react"
+import { formatDate } from "@/lib/formatDate"
 
 export default function TraineeManagementPage() {
   const [isAddTraineeDialogOpen, setIsAddTraineeDialogOpen] = useState(false)
@@ -173,7 +174,7 @@ export default function TraineeManagementPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard?role=admin">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
@@ -412,7 +413,7 @@ export default function TraineeManagementPage() {
                             )}
                           </Badge>
                         </TableCell>
-                        <TableCell>{new Date(trainee.lastActivity).toLocaleDateString()}</TableCell>
+                        <TableCell>{formatDate(trainee.lastActivity)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
                             <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50">

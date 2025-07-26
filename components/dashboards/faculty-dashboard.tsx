@@ -81,30 +81,6 @@ const item = {
 }
 
 export default function FacultyDashboard() {
-  const [pendingUsers, setPendingUsers] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchPending() {
-      const res = await fetch("/api/admin/pending-users")
-      const data = await res.json()
-      setPendingUsers(data)
-      setLoading(false)
-    }
-    fetchPending()
-  }, [])
-
-  async function handleApprove(userId: string) {
-    const res = await fetch("/api/admin/approve-user", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    })
-
-    if (res.ok) {
-      setPendingUsers((prev) => prev.filter((user) => user.id !== userId))
-    }
-  }
 
   return (
     <div className="space-y-6">

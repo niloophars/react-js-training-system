@@ -1,3 +1,4 @@
+
 "use client"
 
 import { GraduationCap, Home, Users, BookOpen, BarChart3, LogOut } from "lucide-react"
@@ -15,6 +16,9 @@ import {
 } from "@/components/ui/sidebar"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { supabase } from '@/lib/supabaseClient'
+
+
 
 interface AppSidebarProps {
   userRole: string
@@ -26,7 +30,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   const facultyItems = [
     {
       title: "Dashboard",
-      url: "/dashboard?role=faculty",
+      url: "/dashboard",
       icon: Home,
     },
     {
@@ -49,7 +53,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   const traineeItems = [
     {
       title: "Dashboard",
-      url: "/dashboard?role=trainee",
+      url: "/dashboard",
       icon: Home,
     },
     {
@@ -67,7 +71,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   const adminItems = [
     {
       title: "Dashboard",
-      url: "/dashboard?role=admin",
+      url: "/dashboard",
       icon: Home,
     },
     {
@@ -90,9 +94,14 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   // Update the menuItems logic
   const menuItems = userRole === "admin" ? adminItems : userRole === "faculty" ? facultyItems : traineeItems
 
-  const handleLogout = () => {
-    router.push("/")
-  }
+
+
+
+
+const handleLogout = async () => {
+  await supabase.auth.signOut()
+  router.push("/")
+}
 
   const container = {
     hidden: { opacity: 0 },

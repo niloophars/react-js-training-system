@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { formatDate } from "@/lib/formatDate"
 
 export default function TraineesPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -164,7 +165,7 @@ export default function TraineesPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard?role=faculty">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
@@ -372,7 +373,7 @@ export default function TraineesPage() {
                                       <h4 className="font-medium">Contact Information</h4>
                                       <p className="text-sm text-gray-600">{trainee.email}</p>
                                       <p className="text-sm text-gray-600">
-                                        Joined: {new Date(trainee.joinDate).toLocaleDateString()}
+                                        Joined: {formatDate(trainee.joinDate)}
                                       </p>
                                     </div>
                                     <div className="space-y-2">

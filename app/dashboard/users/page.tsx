@@ -1,9 +1,9 @@
 "use client"
 
-import type React from "react"
+import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabaseClient"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { useState, useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -18,19 +18,18 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Users, Plus, Edit, Trash2, Search, UserCheck, UserX } from "lucide-react"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Users, Edit, Trash2, Search, UserCheck, UserX } from "lucide-react"
+import { formatDate } from "@/lib/formatDate"
 
 type User = {
   user_id: number
@@ -45,12 +44,50 @@ type User = {
 }
 
 export default function UserManagementPage() {
+  const router = useRouter()
+
+  // Auth & Authorization state
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState("all")
- 
+  const [processingUserId, setProcessingUserId] = useState<number | null>(null) // disable buttons while processing
+
+  // Fetch current user & check admin role
+  const fetchCurrentUser = async () => {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      router.replace("/login") // Redirect if not logged in
+      return
+    }
+
+    // Fetch user profile info for role (assuming 'user' table has auth_user_id)
+    const { data: profile, error: profileError } = await supabase
+      .from("user")
+      .select("role")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (profileError || !profile) {
+      alert("You don't have access to this page.")
+      router.replace("/login")
+      return
+    }
+
+    if (profile.role !== "admin") {
+      alert("Access denied: Admins only.")
+      router.replace("/login")
+      return
+    }
+
+    setCurrentUser(user)
+  }
 
   // Fetch users from Supabase
   const fetchUsers = async () => {
@@ -65,15 +102,21 @@ export default function UserManagementPage() {
       console.error(error)
     } else {
       setUsers(data)
+      setError(null)
     }
     setLoading(false)
   }
 
   useEffect(() => {
-    fetchUsers()
+    fetchCurrentUser()
   }, [])
 
-  
+  useEffect(() => {
+    if (currentUser) {
+      fetchUsers()
+    }
+  }, [currentUser])
+
   const filteredUsers = users.filter((user) => {
     const isVisibleRole = ["faculty", "trainee"].includes(user.role)
     const matchesSearch =
@@ -87,37 +130,38 @@ export default function UserManagementPage() {
   const pendingRequests = users.filter((user) => user.status === "pending")
 
   const handleApprove = async (userId: number) => {
-  const { error } = await supabase
-    .from("user")
-    .update({ status: "approved", updated_at: new Date().toISOString() })
-    .eq("user_id", userId)
+    setProcessingUserId(userId)
+    const { error } = await supabase
+      .from("user")
+      .update({ status: "approved", updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
 
-  if (error) {
-    console.error("Error approving user:", error)
-    alert("Failed to approve user")
-  } else {
-    alert("User approved successfully")
-    // Refresh data here
+    if (error) {
+      console.error("Error approving user:", error)
+      alert("Failed to approve user")
+    } else {
+      alert("User approved successfully")
+      await fetchUsers() // Refresh data
+    }
+    setProcessingUserId(null)
   }
-}
 
-const handleReject = async (userId: number) => {
-  const { error } = await supabase
-    .from("user")
-    .update({ status: "disabled", updated_at: new Date().toISOString() })
-    .eq("user_id", userId)
+  const handleReject = async (userId: number) => {
+    setProcessingUserId(userId)
+    const { error } = await supabase
+      .from("user")
+      .update({ status: "disabled", updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
 
-  if (error) {
-    console.error("Error rejecting user:", error)
-    alert("Failed to reject user")
-  } else {
-    alert("User rejected and disabled")
-    // Refresh data here
+    if (error) {
+      console.error("Error rejecting user:", error)
+      alert("Failed to reject user")
+    } else {
+      alert("User rejected and disabled")
+      await fetchUsers() // Refresh data
+    }
+    setProcessingUserId(null)
   }
-}
-
-
-
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -133,9 +177,23 @@ const handleReject = async (userId: number) => {
   }
 
   const getStatusBadgeColor = (status: string) => {
-    return status === "active"
-      ? "bg-green-100 text-green-700 hover:bg-green-100"
-      : "bg-red-100 text-red-700 hover:bg-red-100"
+    switch (status) {
+      case "approved":
+        return "bg-green-100 text-green-700 hover:bg-green-100"
+      case "pending":
+        return "bg-yellow-100 text-yellow-700 hover:bg-yellow-100"
+      case "disabled":
+      default:
+        return "bg-red-100 text-red-700 hover:bg-red-100"
+    }
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-600">Checking authentication...</p>
+      </div>
+    )
   }
 
   return (
@@ -169,69 +227,67 @@ const handleReject = async (userId: number) => {
               </h2>
               <p className="text-muted-foreground mt-2">Manage all system users, roles, and permissions</p>
             </div>
-            
-              
-
-                
           </div>
-{pendingRequests.length > 0 && (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center">
-        <Users className="h-5 w-5 mr-2 text-yellow-600" />
-        Pending Requests
-      </CardTitle>
-      <CardDescription>Review and manage new sign-up approvals</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Signup Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pendingRequests.map((user) => (
-              <TableRow key={user.user_id}>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
-                </TableCell>
-                <TableCell>
-                  {new Date(user.created_at).toLocaleString("en-US")}
-                </TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-green-500 text-green-600 hover:bg-green-50"
-                    onClick={() => handleApprove(user.user_id)}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-red-500 text-red-600 hover:bg-red-50"
-                    onClick={() => handleReject(user.user_id)}
-                  >
-                    Reject
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </CardContent>
-  </Card>
-)}
+
+          {/* Pending Requests */}
+          {pendingRequests.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="h-5 w-5 mr-2 text-yellow-600" />
+                  Pending Requests
+                </CardTitle>
+                <CardDescription>Review and manage new sign-up approvals</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Signup Date</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingRequests.map((user) => (
+                        <TableRow key={user.user_id}>
+                          <TableCell>{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
+                          </TableCell>
+                          <TableCell>{new Date(user.created_at).toLocaleString("en-US")}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-green-500 text-green-600 hover:bg-green-50"
+                              onClick={() => handleApprove(user.user_id)}
+                              disabled={processingUserId === user.user_id}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-500 text-red-600 hover:bg-red-50"
+                              onClick={() => handleReject(user.user_id)}
+                              disabled={processingUserId === user.user_id}
+                            >
+                              Reject
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Filters and Search */}
           <Card>
@@ -265,7 +321,6 @@ const handleReject = async (userId: number) => {
                     <SelectItem value="trainee">Trainee</SelectItem>
                   </SelectContent>
                 </Select>
-
               </div>
 
               {/* Users Table */}
@@ -302,22 +357,37 @@ const handleReject = async (userId: number) => {
                                 <UserCheck className="h-3 w-3 mr-1" />
                                 Approved
                               </>
+                            ) : user.status === "pending" ? (
+                              <>
+                                <UserX className="h-3 w-3 mr-1" />
+                                Pending
+                              </>
                             ) : (
                               <>
                                 <UserX className="h-3 w-3 mr-1" />
-                                Inactive
+                                Disabled
                               </>
                             )}
                           </Badge>
                         </TableCell>
-                        
-
+                          <TableCell>{formatDate(user.created_at)}</TableCell>
+                          <TableCell>{formatDate(user.updated_at)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
-                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 hover:bg-blue-50"
+                              disabled
+                            >
                               <Edit className="h-4 w-4 text-blue-600" />
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-red-50">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 hover:bg-red-50"
+                              disabled
+                            >
                               <Trash2 className="h-4 w-4 text-red-600" />
                             </Button>
                           </div>

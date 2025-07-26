@@ -27,6 +27,8 @@ import {
   Trophy,
   Star,
 } from "lucide-react"
+import { formatDate } from "@/lib/formatDate"
+
 
 export default function ProgressPage() {
   const overallStats = {
@@ -132,7 +134,7 @@ export default function ProgressPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard?role=trainee">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
@@ -293,12 +295,12 @@ export default function ProgressPage() {
                           </div>
                         )}
 
-                        {course.nextDeadline && (
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            Next deadline: {new Date(course.nextDeadline).toLocaleDateString()}
-                          </div>
-                        )}
+                      {course.nextDeadline && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          Next deadline: {formatDate(course.nextDeadline)}
+                        </div>
+                      )}
                       </div>
                     ))}
                   </div>

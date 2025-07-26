@@ -113,43 +113,43 @@ if (data.exists_in_auth && !data.exists_in_user) {
 
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: signInEmail,
-      password: signInPassword,
-    })
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: signInEmail,
+    password: signInPassword,
+  })
 
-    if (error) {
-      alert("Login failed: " + error.message)
-      return
-    }
-
-    const supabaseUserId = data.user?.id
-
-    const { data: userData, error: fetchError } = await supabase
-  .from("user")
-  .select("role, status")
-  .eq("auth_user_id", supabaseUserId)
-  .maybeSingle()
-
-if (fetchError) {
-  alert("Error fetching user: " + fetchError.message)
-  return
-}
-
-if (!userData) {
-  alert("Your account is registered but not yet approved. Please wait for admin approval.")
-  return
-}
-
-if (userData.status === "pending") {
-  alert("Your account is pending admin approval. You will be notified once approved.")
-  return
-}
-
-    router.push(`/dashboard?role=${userData.role}`)
+  if (error) {
+    alert("Login failed: " + error.message)
+    return
   }
+
+  const supabaseUserId = data.user?.id
+  const { data: userData, error: fetchError } = await supabase
+    .from("user")
+    .select("role, status")
+    .eq("auth_user_id", supabaseUserId)
+    .maybeSingle()
+
+  if (fetchError) {
+    alert("Error fetching user: " + fetchError.message)
+    return
+  }
+
+  if (!userData || userData.status === "pending") {
+    alert("Your account is pending admin approval.")
+    return
+  }
+
+  // ✅ Force re-fetch of server components and cookies
+  router.refresh() 
+
+  // ✅ Let Next.js re-evaluate /dashboard with the right cookies
+  router.push("/dashboard")
+}
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-100 flex items-center justify-center p-4">

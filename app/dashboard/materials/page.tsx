@@ -48,6 +48,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { useSearchParams } from "next/navigation"
+import { formatDate } from "@/lib/formatDate"
+
 
 export default function TrainingMaterialsPage() {
   const searchParams = useSearchParams()
@@ -229,7 +231,7 @@ export default function TrainingMaterialsPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard?role=faculty">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
@@ -549,9 +551,9 @@ export default function TrainingMaterialsPage() {
                     </div>
 
                     <div className="flex items-center justify-between pt-2">
-                      <p className="text-xs text-gray-500">
-                        Uploaded {new Date(material.uploadDate).toLocaleDateString()}
-                      </p>
+                  <p className="text-xs text-gray-500">
+                    Uploaded {formatDate(material.uploadDate)}
+                  </p>
                       <div className="flex space-x-1">
                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50">
                           <Play className="h-4 w-4 text-blue-600" />
