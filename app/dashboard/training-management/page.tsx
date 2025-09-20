@@ -38,6 +38,9 @@ export default function TrainingManagementPage() {
   const [userRole, setUserRole] = useState<string | null>(null)
   const [facultyList, setFacultyList] = useState<{ user_id: string; name: string }[]>([])
   const [selectedInstructor, setSelectedInstructor] = useState<string>("")
+  const [startDate, setStartDate] = useState<string>("")
+  const [endDate, setEndDate] = useState<string>("")
+
 
 
 
@@ -159,31 +162,37 @@ export default function TrainingManagementPage() {
   const handleCreateProgram = (e: React.FormEvent) => {
   e.preventDefault()
 
+  if (new Date(endDate) < new Date(startDate)) {
+    alert("End date cannot be earlier than start date")
+    return
+  }
+
   let instructorToUse = ""
 
-    if (userRole === "admin") {
-      if (!selectedInstructor) {
-        alert("Please select a faculty")
-        return
-      }
-      instructorToUse = selectedInstructor
-    } else if (userRole === "faculty") {
-      if (!instructorName) {
-        alert("Faculty name not loaded. Please try again.")
-        return
-      }
-      instructorToUse = instructorName
-    } else {
-      alert("You do not have permission to create a program")
+  if (userRole === "admin") {
+    if (!selectedInstructor) {
+      alert("Please select a faculty")
       return
     }
-
-    // Use instructorToUse for the program creation logic
-    console.log("Creating program with faculty:", instructorToUse)
-
-    setIsCreateProgramDialogOpen(false)
-    alert("Training program created successfully!")
+    instructorToUse = selectedInstructor
+  } else if (userRole === "faculty") {
+    if (!instructorName) {
+      alert("Faculty name not loaded. Please try again.")
+      return
+    }
+    instructorToUse = instructorName
+  } else {
+    alert("You do not have permission to create a program")
+    return
   }
+
+  // Continue program creation
+  console.log("Creating program with faculty:", instructorToUse)
+
+  setIsCreateProgramDialogOpen(false)
+  alert("Training program created successfully!")
+}
+
 
 
 
@@ -389,6 +398,9 @@ export default function TrainingManagementPage() {
                       <Input
                         id="startDate"
                         type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        min={new Date().toISOString().split("T")[0]} // 👈 Sets today as the minimum
                         className="h-11 border-2 focus:border-purple-500 transition-colors"
                         required
                       />
@@ -400,6 +412,9 @@ export default function TrainingManagementPage() {
                       <Input
                         id="endDate"
                         type="date"
+                        value={endDate}
+                        min={startDate} // this prevents selecting earlier dates
+                        onChange={(e) => setEndDate(e.target.value)}
                         className="h-11 border-2 focus:border-purple-500 transition-colors"
                         required
                       />
@@ -417,10 +432,12 @@ export default function TrainingManagementPage() {
                     </Button>
                     <Button
                       type="submit"
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      disabled={new Date(endDate) < new Date(startDate)}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Create Program
                     </Button>
+
                   </div>
                 </form>
               </DialogContent>
