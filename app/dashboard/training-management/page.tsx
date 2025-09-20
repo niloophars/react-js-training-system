@@ -1,8 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { SidebarProvider } from "@/components/ui/sidebar"
+import { supabase } from "@/lib/supabaseClient"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -33,6 +34,56 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { BookOpen, Plus, Edit, Trash2, Search, Users, Clock, TrendingUp } from "lucide-react"
 
 export default function TrainingManagementPage() {
+  const [instructorName, setInstructorName] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [facultyList, setFacultyList] = useState<{ user_id: string; name: string }[]>([])
+  const [selectedInstructor, setSelectedInstructor] = useState<string>("")
+
+
+
+      const [userId, setUserId] = useState<string | null>(null)
+
+    useEffect(() => {
+      const fetchUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data, error } = await supabase
+          .from("user")
+          .select("user_id, name, role")
+          .eq("auth_user_id", user.id) // user.id is the Supabase Auth UUID
+          .single()
+
+
+          if (!error && data) {
+            setUserId(data.user_id)              // <-- store user ID
+            setInstructorName(data.name)    // for display if faculty
+            setUserRole(data.role)
+          }
+        }
+      }
+      fetchUser()
+    }, [])
+
+    useEffect(() => {
+    if (userRole === "admin") {
+      const fetchFaculty = async () => {
+        const { data, error } = await supabase
+          .from("user")
+          .select("user_id, name")
+          .eq("role", "faculty")
+
+        if (!error && data) {
+          setFacultyList(data)
+        }
+        else {
+        console.error("Error fetching faculty:", error)
+      }
+      }
+      fetchFaculty()
+    }
+  }, [userRole])
+
+
   const [isCreateProgramDialogOpen, setIsCreateProgramDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
@@ -106,10 +157,36 @@ export default function TrainingManagementPage() {
   ]
 
   const handleCreateProgram = (e: React.FormEvent) => {
-    e.preventDefault()
+  e.preventDefault()
+
+  let instructorToUse = ""
+
+    if (userRole === "admin") {
+      if (!selectedInstructor) {
+        alert("Please select a faculty")
+        return
+      }
+      instructorToUse = selectedInstructor
+    } else if (userRole === "faculty") {
+      if (!instructorName) {
+        alert("Faculty name not loaded. Please try again.")
+        return
+      }
+      instructorToUse = instructorName
+    } else {
+      alert("You do not have permission to create a program")
+      return
+    }
+
+    // Use instructorToUse for the program creation logic
+    console.log("Creating program with faculty:", instructorToUse)
+
     setIsCreateProgramDialogOpen(false)
     alert("Training program created successfully!")
   }
+
+
+
 
   const filteredPrograms = trainingPrograms.filter((program) => {
     const matchesSearch =
@@ -158,7 +235,10 @@ export default function TrainingManagementPage() {
       icon: Clock,
     },
   ]
-
+  console.log("userRole at render:", userRole)
+  if (userRole === null) {
+    return null // or a loader
+  }
   return (
     <SidebarProvider>
       <AppSidebar userRole="admin" />
@@ -190,6 +270,9 @@ export default function TrainingManagementPage() {
               </h2>
               <p className="text-muted-foreground mt-2">Manage all training programs, courses, and curricula</p>
             </div>
+           
+
+            {(userRole === "admin" || userRole === "faculty") && (
             <Dialog open={isCreateProgramDialogOpen} onOpenChange={setIsCreateProgramDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg">
@@ -203,7 +286,7 @@ export default function TrainingManagementPage() {
                     Create New Training Program
                   </DialogTitle>
                   <DialogDescription>
-                    Set up a new training program with curriculum, timeline, and instructor assignment.
+                    Set up a new training program with curriculum, timeline, and faculty assignment.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -249,19 +332,35 @@ export default function TrainingManagementPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="instructor" className="text-sm font-medium">
-                        Instructor
+                        Faculty
                       </Label>
-                      <Select required>
-                        <SelectTrigger className="h-11 border-2 focus:border-purple-500">
-                          <SelectValue placeholder="Select instructor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="dr-smith">Dr. Sarah Smith</SelectItem>
-                          <SelectItem value="prof-johnson">Prof. John Johnson</SelectItem>
-                          <SelectItem value="dr-wilson">Dr. Michael Wilson</SelectItem>
-                          <SelectItem value="prof-davis">Prof. Lisa Davis</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    {userRole === "admin" ? (
+                    <Select
+                      required
+                      onValueChange={setSelectedInstructor}
+                      value={selectedInstructor}
+                    >
+                      <SelectTrigger className="h-11 border-2 focus:border-purple-500">
+                        <SelectValue placeholder="Select Faculty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {facultyList.map((faculty) => (
+                        <SelectItem key={faculty.user_id} value={faculty.user_id}>
+                        {faculty.name}
+                      </SelectItem>
+
+                      ))}
+                      </SelectContent>
+                    </Select>
+                  ) : userRole === "faculty" ? (
+                    <Input
+                      id="instructor"
+                      value={instructorName ?? "Loading..."}
+                      readOnly
+                      className="h-11 border-2 focus:border-purple-500 transition-colors bg-gray-100 cursor-not-allowed"
+                    />
+                  ): null }
+
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category" className="text-sm font-medium">
@@ -326,6 +425,7 @@ export default function TrainingManagementPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            )}
           </div>
 
           {/* Statistics Cards */}
@@ -386,7 +486,7 @@ export default function TrainingManagementPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Program</TableHead>
-                      <TableHead>Instructor</TableHead>
+                      <TableHead>Faculty</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Enrolled</TableHead>
                       <TableHead>Completion</TableHead>

@@ -1,7 +1,6 @@
-
 "use client"
 
-import { GraduationCap, Home, Users, BookOpen, BarChart3, LogOut } from "lucide-react"
+import { GraduationCap, Home, Users, BookOpen, BarChart3, LogOut, BookAudio } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +17,18 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { supabase } from '@/lib/supabaseClient'
 
+// ✅ Define types
+interface SidebarMenuChild {
+  title: string
+  url: string
+}
 
+interface SidebarMenuItemType {
+  title: string
+  url: string
+  icon: React.ElementType
+  children?: SidebarMenuChild[]
+}
 
 interface AppSidebarProps {
   userRole: string
@@ -27,7 +37,8 @@ interface AppSidebarProps {
 export function AppSidebar({ userRole }: AppSidebarProps) {
   const router = useRouter()
 
-  const facultyItems = [
+  // ✅ Use explicit types
+  const facultyItems: SidebarMenuItemType[] = [
     {
       title: "Dashboard",
       url: "/dashboard",
@@ -39,8 +50,8 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
       icon: Users,
     },
     {
-      title: "Training Materials",
-      url: "/dashboard/materials",
+      title: "Trainings",
+      url: "/dashboard/training-management",
       icon: BookOpen,
     },
     {
@@ -50,7 +61,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     },
   ]
 
-  const traineeItems = [
+  const traineeItems: SidebarMenuItemType[] = [
     {
       title: "Dashboard",
       url: "/dashboard",
@@ -68,21 +79,26 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     },
   ]
 
-  const adminItems = [
+  const adminItems: SidebarMenuItemType[] = [
     {
       title: "Dashboard",
       url: "/dashboard",
       icon: Home,
     },
     {
-    title: "User Management",
-    url: "/dashboard/users", // This is the missing page
-    icon: Users,
-  },
+      title: "User Management",
+      url: "/dashboard/users",
+      icon: Users,
+    },
     {
       title: "Training Management",
       url: "/dashboard/training-management",
       icon: BookOpen,
+    },
+    {
+      title: "Training Materials",
+      url: "/dashboard/materials",
+      icon: BookAudio,
     },
     {
       title: "System Analytics",
@@ -91,17 +107,17 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     },
   ]
 
-  // Update the menuItems logic
-  const menuItems = userRole === "admin" ? adminItems : userRole === "faculty" ? facultyItems : traineeItems
+  const menuItems: SidebarMenuItemType[] =
+    userRole === "admin"
+      ? adminItems
+      : userRole === "faculty"
+      ? facultyItems
+      : traineeItems
 
-
-
-
-
-const handleLogout = async () => {
-  await supabase.auth.signOut()
-  router.push("/")
-}
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push("/")
+  }
 
   const container = {
     hidden: { opacity: 0 },
@@ -133,29 +149,48 @@ const handleLogout = async () => {
           </div>
           <div>
             <h2 className="text-lg font-semibold">TrainMaster</h2>
-            <p className="text-xs text-blue-100 capitalize">{userRole === "admin" ? "Admin" : userRole} Portal</p>
+            <p className="text-xs text-blue-100 capitalize">
+              {userRole === "admin" ? "Admin" : userRole} Portal
+            </p>
           </div>
         </motion.div>
       </SidebarHeader>
+
       <SidebarContent className="bg-gradient-to-b from-white to-blue-50">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-blue-700 font-medium">Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-blue-700 font-medium">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <motion.div variants={container} initial="hidden" animate="show">
               <SidebarMenu>
-                {menuItems.map((item, index) => (
+                {menuItems.map((item) => (
                   <motion.div key={item.title} variants={itemVariant}>
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         asChild
                         className="hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 transform hover:translate-x-1"
                       >
-                        <a href={item.url} className="flex items-center gap-3">
+                        <a href={item.url ?? "#"} className="flex items-center gap-3">
                           <item.icon className="h-4 w-4" />
                           <span>{item.title}</span>
                         </a>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+
+                    {/* ✅ Render children if present */}
+                    {item.children?.map((child: SidebarMenuChild) => (
+                      <SidebarMenuItem key={child.title} className="pl-10">
+                        <SidebarMenuButton
+                          asChild
+                          className="hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 transform hover:translate-x-1"
+                        >
+                          <a href={child.url} className="flex items-center gap-3 text-sm">
+                            <span>{child.title}</span>
+                          </a>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
                   </motion.div>
                 ))}
               </SidebarMenu>
@@ -163,6 +198,7 @@ const handleLogout = async () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter className="bg-gradient-to-r from-slate-100 to-blue-100 border-t border-blue-200">
         <SidebarMenu>
           <SidebarMenuItem>
