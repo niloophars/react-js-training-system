@@ -76,14 +76,14 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header Banner */}
       <motion.div
-        className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-2xl p-6 text-white shadow-lg"
+        className="bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         whileHover={{ scale: 1.01 }}
       >
         <h2 className="text-3xl font-bold tracking-tight mb-2">Admin Dashboard</h2>
-        <p className="text-purple-100">Manage the entire training system and monitor performance.</p>
+        <p className="text-blue-100">Manage the entire training system and monitor performance.</p>
       </motion.div>
 
       {/* Statistics */}

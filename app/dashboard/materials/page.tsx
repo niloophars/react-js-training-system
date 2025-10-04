@@ -627,3 +627,4 @@ export default function TrainingMaterialsPage() {
     </SidebarProvider>
   )
 }
+

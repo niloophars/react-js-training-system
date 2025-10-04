@@ -51,7 +51,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     },
     {
       title: "Trainings",
-      url: "/dashboard/training-management",
+      url: "/dashboard/my-trainings",
       icon: BookOpen,
     },
     {
